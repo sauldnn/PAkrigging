@@ -1,5 +1,3 @@
-import math
-import numpy as np
 def k_method(U, ubic):
     dim = len(U)
     U.append(ubic)
