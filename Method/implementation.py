@@ -4,7 +4,6 @@ import mysql.connector
 import pandas as pd
 import math
 import random
-import numpy as np
 from Method import k_method
 
 print('Inicia el programa a las ', time.strftime('%H:%M:%S', time.localtime()))
@@ -50,26 +49,36 @@ for k in range(len(QuerySerial)):
     llenos = Datos.dropna()
     huecos = Datos[Datos.isnull().values]
 
-    if len(huecos) > 1:
+    if len(huecos) > 0:
         print('Inicia Kriging {} a las {} con {} huecos'.format(k, time.strftime('%H:%M:%S', time.localtime()), len(huecos)))
+        matrices = []
+        equals = []
+        to_multi = []
+        timein = time.time()
 
         for i in range(len(huecos)):
             if i % 100 == 0:
-                print('Estado: nivel {} iteracion {} a las {}'.format(k, i, time.strftime('%H:%M:%S', time.localtime())))
+                print('Estado: Estacion {} iteracion {} a las {}'.format(k, i, time.time()))
             ubic = [huecos.iloc[i].FechaDEC, 1]
-
             while True:
-                try:
-                    U = [llenos.iloc[random.randrange(1, len(llenos))].tolist() for n in range(nkrig)]
-                    out = k_method(U, ubic)
-                    if (out > 500) and (out < 600):
-                        break
-                    else: pass
-                except np.linalg.LinAlgError:
-                    pass
-
-            Datos.loc[huecos.iloc[i].name, 'Valor'] = out
-        print('Fin de operacion {} a las {} '.format(k, time.strftime('%Y-%m-%d %H:%M:%S', time.localtime()), len(huecos)))
+                # calculamos el muestreo y las matrices y vectores.
+                sampl = sample([x for x in range(0,len(llenos))], 24*7)
+                U = [llenos.iloc[sampl[n]].tolist() for n in range(24*7)]
+                matr, equ, to_mul = get_components(ubic, U)
+                if np.linalg.det(matr)>0.0:
+                    partial = time.time()
+                    to_multi.append(to_mul)
+                    matrices.append(matr)
+                    equals.append(equ)
+                    break
+                else: pass
+        A = torch.tensor(matrices)
+        b = torch.tensor(equals)
+        soluciones = torch.linalg.solve(A, b)
+        reemplazo = [torch.dot(soluciones[i][:torch.tensor(to_multi).shape[1]], torch.tensor(to_multi)[i]).item() for i in range(A.shape[0])]
+        for i in range(len(huecos)):
+            Datos.loc[Datos[Datos.isnull().values].index[i], 'Valor'] = reemplazo[i]
+        print('Fin de operacion {} a las {} '.format(k, time.time(), len(huecos)))
 
         mydb = mysql.connector.connect(host='localhost',
                              user='root',
