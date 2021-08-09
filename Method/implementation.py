@@ -63,7 +63,7 @@ for k in range(len(QuerySerial)):
             while True:
                 # calculamos el muestreo y las matrices y vectores.
                 sampl = sample([x for x in range(0,len(llenos))], 24*7)
-                U = [llenos.iloc[sampl[n]].tolist() for n in range(24*7)]
+                U = llenos.iloc[sampl].values.tolist()
                 matr, equ, to_mul = get_components(ubic, U)
                 if np.linalg.det(matr.tolist())>0.0:
                     partial = time.time()
