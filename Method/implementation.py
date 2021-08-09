@@ -65,17 +65,26 @@ for k in range(len(QuerySerial)):
                 sampl = sample([x for x in range(0,len(llenos))], 24*7)
                 U = [llenos.iloc[sampl[n]].tolist() for n in range(24*7)]
                 matr, equ, to_mul = get_components(ubic, U)
-                if np.linalg.det(matr)>0.0:
+                if np.linalg.det(matr.tolist())>0.0:
                     partial = time.time()
-                    to_multi.append(to_mul)
-                    matrices.append(matr)
-                    equals.append(equ)
+                    to_multi.append(to_mul.tolist())
+                    matrices.append(matr.tolist())
+                    equals.append(equ.tolist())
                     break
                 else: pass
+
+        torch.set_default_tensor_type("torch.cuda.FloatTensor")
         A = torch.tensor(matrices)
+        torch.set_default_tensor_type("torch.cuda.FloatTensor")
         b = torch.tensor(equals)
+        torch.set_default_tensor_type("torch.cuda.FloatTensor")
         soluciones = torch.linalg.solve(A, b)
-        reemplazo = [torch.dot(soluciones[i][:torch.tensor(to_multi).shape[1]], torch.tensor(to_multi)[i]).item() for i in range(A.shape[0])]
+        torch.set_default_tensor_type("torch.cuda.FloatTensor")
+        producto = torch.tensor(to_multi)
+        torch.set_default_tensor_type("torch.cuda.FloatTensor")
+        reemplazo = [torch.dot(soluciones[i][:torch.tensor(to_multi).shape[1]], torch.tensor(to_multi)[i]).item()
+                    for i in range(A.shape[0])]
+
         for i in range(len(huecos)):
             Datos.loc[Datos[Datos.isnull().values].index[i], 'Valor'] = reemplazo[i]
         print('Fin de operacion {} a las {} '.format(k, time.time(), len(huecos)))
