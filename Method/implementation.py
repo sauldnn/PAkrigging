@@ -5,7 +5,7 @@ import pandas as pd
 import math
 import random
 from Method import k_method
-
+from scipy.spatial import distance_matrix
 print('Inicia el programa a las ', time.strftime('%H:%M:%S', time.localtime()))
 
 # Connect to the database
